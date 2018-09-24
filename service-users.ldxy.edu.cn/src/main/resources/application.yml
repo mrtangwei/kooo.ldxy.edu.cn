@@ -1,0 +1,21 @@
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:9010/eureka/
+
+server:
+  port: 9040
+
+spring:
+  application:
+    name: service-users
+  data:
+    mongodb:
+      host: mongodbCluster.ldxy.edu.cn
+      port: 27017
+      authentication-database: kooo
+      database: kooo
+      username: kooo
+      password: kooo8522206
+
+

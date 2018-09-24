@@ -1,0 +1,41 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:9010/eureka/
+server:
+  port: 9020
+spring:
+  application:
+    name: service-gateway
+  zipkin:
+    base-url: http://localhost:9050
+  security:
+    oauth2:
+      client:
+        access-token-uri: http://localhost:${server.port}/api-token/oauth/token
+        user-authorization-uri: http://localhost:${server.port}/api-token/oauth/authorize
+      resource:
+        user-info-uri: http://localhost:${server.port}/uaa/user
+        prefer-token-info: false
+  main:
+    allow-bean-definition-overriding: true
+
+zuul:
+  host:
+    connect-timeout-millis: 10000
+    socket-timeout-millis: 60000
+  routes:
+    api-token:
+      path: /api-token/**
+      serviceId: auth2.0-center
+      url: http://localhost:9030
+    api-users:
+      path: /api-users/**
+      serviceId: auth2.0-center
+      url: http://localhost:9030
+logging:
+  config: classpath:logback.xml
+  level:
+    org:
+      springframework:
+        web: debug

@@ -1,0 +1,122 @@
+package cn.edu.ldxy.auth.config;
+
+import cn.edu.ldxy.auth.domain.RoleResources;
+import cn.edu.ldxy.auth.service.RoleResourcesService;
+import com.alibaba.fastjson.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.ConfigAttribute;
+import org.springframework.security.access.SecurityConfig;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+
+import java.util.*;
+
+/**
+ * <p>参看：https://github.com/spring-guides/tut-spring-security-and-angular-js/blob/master/oauth2-vanilla/README.adoc</p>
+ * Created by Mr.Yangxiufeng on 2017/12/29.
+ * Time:10:46
+ * ProjectName:Mirco-Service-Skeleton
+ */
+@Configuration
+@EnableResourceServer
+public class ResourceServerConfig extends ResourceServerConfigurerAdapter{
+
+    @Autowired
+    private RoleResourcesService roleResourcesService;
+
+    private static final String AuthResourceRESOURCEID = "order";
+
+
+    private Map<String, Collection<ConfigAttribute>> resourceMap = null;
+
+
+
+
+    @Override
+    public void configure(ResourceServerSecurityConfigurer resources){
+        resources.resourceId(AuthResourceRESOURCEID).stateless(true);
+    }
+
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        http.
+                csrf().disable()
+                .authorizeRequests().antMatchers("/oauth/**").permitAll()
+                .and()
+                .httpBasic();
+    }
+/*    public void configure(HttpSecurity http)throws Exception{
+*//*        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .and().requestMatchers()
+                .and().anonymous()
+                .and().authorizeRequests()
+                .antMatchers("/risk/**").authenticated();//配置security访问控制，必须认证过后才可以访问*//*
+
+        http
+                .cors().and()
+                .csrf().disable();
+
+        getRoleResource();
+        for( Map.Entry<String,  Collection<ConfigAttribute>> entry :resourceMap.entrySet())
+        {
+            String urls = " " + entry.getKey().toString() + " ";  //这个地方是最奇怪的地方  entry.getKey() 不能被直接当做String识别
+            String role = "";
+            for(int i=0; i < entry.getValue().toArray().length; i++)
+            {
+                role = role + entry.getValue().toArray()[i];
+                if(i < entry.getValue().toArray().length -1){
+                    role = role +  ",";
+                }
+            }
+            System.out.println("urls " + urls + " matcher : " +  role);
+            http.authorizeRequests().antMatchers(urls.trim()).hasAnyAuthority(role);
+        }
+        http.authorizeRequests().anyRequest().permitAll().requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
+                .and().formLogin().permitAll()
+                .and()
+                // 登出
+                .logout().permitAll()
+                .and()
+                // HTTP Basic authentication 异步认证
+                .httpBasic();
+
+    }*/
+
+    private void getRoleResource() throws Exception {
+        resourceMap = new HashMap<String, Collection<ConfigAttribute>>();
+        for (RoleResources r : this.roleResourcesService.findAll())
+        {
+            Collection<ConfigAttribute> atts = new ArrayList<ConfigAttribute>();
+            ConfigAttribute ca = new SecurityConfig(r.getRole());
+            atts.add(ca);
+            JSONObject json = r.getUrlJson();
+            Iterator ir = json.entrySet().iterator();
+            for(String s : r.getUrlJson().keySet()){
+                String url = json.getString(s);
+                if (resourceMap.get(url) != null) {
+                    boolean is = false;
+                    Iterator<ConfigAttribute> it = resourceMap.get(url).iterator();
+                    Collection<ConfigAttribute> attnew = new ArrayList<ConfigAttribute>();
+                    while (it.hasNext()) {
+                        ConfigAttribute tmpca = it.next();
+                        if (ca == tmpca){
+                            is = true;
+                        }else{
+                            attnew.add(tmpca);
+                        }
+                    }
+                    if (!is) {
+                        attnew.add(ca);
+                        resourceMap.put(url, attnew);
+                    }
+                } else {
+                    resourceMap.put(url, atts);
+                }
+            }
+        }
+    }
+}

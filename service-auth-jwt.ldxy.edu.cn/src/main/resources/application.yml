@@ -1,0 +1,45 @@
+server:
+  port: 9070
+
+spring:
+  application:
+    name: auth-jwt-center
+  data:
+    mongodb:
+      host: mongodbCluster.ldxy.edu.cn
+      port: 27017
+      authentication-database: kooo
+      database: kooo
+      username: kooo
+      password: kooo8522206
+  zipkin:
+      base-url: http://localhost:9050
+  redis:
+    host: 59.76.48.138
+    port: 6379
+    password: kooo8522206
+eureka:
+  client:
+    #register-with-eureka: false
+    #fetch-registry: false
+    serviceUrl:
+      defaultZone: http://localhost:9010/eureka/
+endpoints:
+  health:
+    enable: true
+management:
+  security:
+    enable: false
+security:
+  oauth2:
+    resource:
+logging:
+  config: classpath:logback.xml
+  level:
+    org:
+      springframework:
+        web: info
+###feign 默认关闭熔断，请看HystrixFeignConfiguration
+feign:
+  hystrix:
+    enabled: true
